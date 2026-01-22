@@ -44,3 +44,14 @@ def create_app() -> Flask:
             "app_error",
             extra={"request_id": getattr(g, "request_id", None), "error_code": err.code},
         )
+        return {"request_id": getattr(g, "request_id", None), "error": {"code": err.code, "message": err.message}}, err.http_status
+    
+    @app.errorhandler(Exception)
+    def handle_unexpected(err: Exception):
+        logger.exception(
+            "unexpected_error",
+            extra={"request_id": getattr(g, "request_id", None)},
+        )
+        return {"request_id": getattr(g, "request_id", None), "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."}}, 500
+    
+    return app
