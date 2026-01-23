@@ -3,6 +3,8 @@ import uuid
 from flask import Flask, request, g
 from flask_restx import Api
 
+from werkzeug.exceptions import NotFound
+
 from app.configs import load_config
 from app.Logger.log_main import get_logger
 from app.routes.health import ns as health_ns
@@ -36,6 +38,7 @@ def create_app() -> Flask:
             "status_code": resp.status_code,
             "latency_ms": latency_ms,
         })
+        
         return resp
     
     @app.errorhandler(AppError)
@@ -46,12 +49,30 @@ def create_app() -> Flask:
         )
         return {"request_id": getattr(g, "request_id", None), "error": {"code": err.code, "message": err.message}}, err.http_status
     
+    @app.errorhandler(NotFound)
+    def handle_not_found(err: NotFound):
+        logger.info(
+            "not_found",
+            extra={"request_id": getattr(g, "request_id", None),
+                   "path": getattr(request, "path", None),
+                   "method": getattr(request, "method", None),
+                   "status_code": 404
+                   },
+        )
+        return {"request_id": getattr(g, "request_id", None),
+                "error": {"code": "NOT_FOUND", "message": "The requested resource was not found."}}, 404
+
     @app.errorhandler(Exception)
     def handle_unexpected(err: Exception):
         logger.exception(
             "unexpected_error",
-            extra={"request_id": getattr(g, "request_id", None)},
+            extra={
+                "request_id": getattr(g, "request_id", None),
+                "path": getattr(request, "path", None),
+                "method": getattr(request, "method", None),
+                },
         )
-        return {"request_id": getattr(g, "request_id", None), "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."}}, 500
+        return {"request_id": getattr(g, "request_id", None),
+                "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."}}, 500
     
     return app

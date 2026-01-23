@@ -22,12 +22,13 @@ class JsonFormatter(logging.Formatter):
     
 def get_logger() -> logging.Logger:
     logger = logging.getLogger("rag_orchestration_api")
-    if logging.handlers:
-        return logger  # Logger is already configured
-    
     logger.setLevel(logging.INFO)
+    
+    logger.handlers.clear()
+    
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(JsonFormatter())
     logger.addHandler(handler)
+
     logger.propagate = False
     return logger
