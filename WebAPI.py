@@ -9,6 +9,8 @@ from app.configs import load_config
 from app.Logger.log_main import get_logger
 from app.routes.health import ns as health_ns
 from app.utils.errors import AppError
+from app.providers.SearchProvider.es_client import ESClient
+from app.providers.SearchProvider.index_manager import IndexManager
 
 # configure logger once per process, duplicate handlers
 logger = get_logger()
@@ -17,6 +19,11 @@ logger = get_logger()
 def create_app() -> Flask:
     app = Flask(__name__)
     cfg = load_config()
+
+    #ensure ES index exist at startup
+    es_client = ESClient(cfg.es_url)
+    index_manager = IndexManager(es_client.client, cfg.index_chunks, cfg.embedding_dim)
+    index_manager.ensure_chunks_index()
 
     api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs")
     api.add_namespace(health_ns, path="/health")
