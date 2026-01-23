@@ -16,5 +16,17 @@ services:
       timeout: 3s
       retries: 30
 
+  api:
+    build: .
+    container_name: rag-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+
 volumes:
   esdata:
