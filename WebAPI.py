@@ -13,6 +13,8 @@ from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.index_manager import IndexManager
 from app.routes.seed import ns as seed_ns
 from app.routes.chunks import ns as chunks_ns
+from app.routes.documents import ns as documents_ns
+from app.routes.ingest import ns as ingest_ns
 
 # configure logger once per process, duplicate handlers
 logger = get_logger()
@@ -31,6 +33,8 @@ def create_app() -> Flask:
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(seed_ns, path="/seed")
     api.add_namespace(chunks_ns, path="/v1/chunks")
+    api.add_namespace(documents_ns, path="/v1/documents")
+    api.add_namespace(ingest_ns, path="/v1/ingest")
 
     @app.before_request
     def before_request():

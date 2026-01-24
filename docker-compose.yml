@@ -25,6 +25,9 @@ services:
       - "8000:8000"
     volumes:
       - ./:/app
+      - ragdata:/data
+    environment:
+      - LOCAL_STORAGE_DIR=/data
     command: gunicorn -w 1 -b 0.0.0.0:8000 --reload wsgi:application
     depends_on:
       elasticsearch:
@@ -45,3 +48,4 @@ services:
 
 volumes:
   esdata:
+  ragdata:

@@ -1,0 +1,31 @@
+# venvs
+.venv/
+.rvenv/
+venv/
+ENV/
+
+# python junk
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# git + ide
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# local data / artifacts
+data/
+*.log
+*.sqlite
+*.db
+*.pdf
+*.docx
+
+# OS junk
+.DS_Store
+Thumbs.db

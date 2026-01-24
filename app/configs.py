@@ -14,6 +14,7 @@ class AppConfig:
     embed_model_name: str
     index_chunks: str
     embedding_dim: int
+    local_storage_dir: str
 
 def load_config() -> AppConfig:
     return AppConfig(
@@ -25,4 +26,5 @@ def load_config() -> AppConfig:
         embed_model_name=os.getenv("EMBED_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2"),
         index_chunks=os.getenv("ES_INDEX_CHUNKS", "rag_chunks"),
         embedding_dim=int(os.getenv("ES_EMBEDDING_DIM", 384)),
+        local_storage_dir=os.getenv("LOCAL_STORAGE_DIR", "/data"),
     )
