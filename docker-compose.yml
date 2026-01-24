@@ -23,9 +23,24 @@ services:
       - .env
     ports:
       - "8000:8000"
+    volumes:
+      - ./:/app
+    command: gunicorn -w 1 -b 0.0.0.0:8000 --reload wsgi:application
     depends_on:
       elasticsearch:
         condition: service_healthy
+
+
+  # api:
+  #   build: .
+  #   container_name: rag-api
+  #   env_file:
+  #     - .env
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     elasticsearch:
+  #       condition: service_healthy
 
 
 volumes:

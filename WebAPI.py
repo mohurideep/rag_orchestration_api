@@ -11,6 +11,8 @@ from app.routes.health import ns as health_ns
 from app.utils.errors import AppError
 from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.index_manager import IndexManager
+from app.routes.seed import ns as seed_ns
+from app.routes.chunks import ns as chunks_ns
 
 # configure logger once per process, duplicate handlers
 logger = get_logger()
@@ -27,6 +29,8 @@ def create_app() -> Flask:
 
     api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs")
     api.add_namespace(health_ns, path="/health")
+    api.add_namespace(seed_ns, path="/seed")
+    api.add_namespace(chunks_ns, path="/v1/chunks")
 
     @app.before_request
     def before_request():
