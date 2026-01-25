@@ -1,3 +1,4 @@
 .rvenv/
 __pycache__/
 .env
+test.txt
