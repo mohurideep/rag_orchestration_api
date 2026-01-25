@@ -26,6 +26,7 @@ services:
     volumes:
       - ./:/app
       - ragdata:/data
+      - ${USERPROFILE}/.aws:/root/.aws:ro
     environment:
       - LOCAL_STORAGE_DIR=/data
     command: gunicorn -w 1 -b 0.0.0.0:8000 --reload wsgi:application

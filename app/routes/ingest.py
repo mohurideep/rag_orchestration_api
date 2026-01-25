@@ -7,6 +7,7 @@ from app.providers.StorageProvider.local_provider import LocalStorageProvider
 from app.utils.text_extract import extract_text
 from app.providers.Chunking.chunker import chunk_text
 from app.providers.EmbeddingsProvider.embedding_provider import LocalEmbeddingProvider
+from app.providers.StorageProvider.s3_provider import S3StorageProvider
 from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.Models.index_dto import ChunkIndexDTO
@@ -24,9 +25,14 @@ class IngestDoc(Resource):
         if not record:
             raise NotFoundError("DOC_NOT_FOUND", f"Document with id {doc_id} not found", 404)
         
-        storage = LocalStorageProvider(g.cfg.local_storage_dir)
-        content = storage.read(record["path"])
+        # storage = LocalStorageProvider(g.cfg.local_storage_dir)
+        # content = storage.read(record["path"])
+        # filename = record["filename"]
+
+        s3 = S3StorageProvider(g.cfg.s3_bucket, g.cfg.aws_region)
+        content = s3.read(record["s3_key"])
         filename = record["filename"]
+        tenant = record.get("tenant", "demo")
 
         text = extract_text(filename, content)
         if not text.strip():
