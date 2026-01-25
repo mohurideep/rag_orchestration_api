@@ -55,7 +55,7 @@ class IngestDoc(Resource):
                 source=filename,
                 created_at=ChunkIndexDTO.now_iso(),
                 chunk_text=ch,
-                vector=vec,
+                embedding=vec,
             )
             es_doc_id = index.upsert_chunk(dto)
             es_ids.append(es_doc_id)

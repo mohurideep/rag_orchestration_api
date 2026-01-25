@@ -7,7 +7,7 @@ class ChunkIndex:
         self.index_name = index_name
         
     def upsert_chunk(self, dto: ChunkIndexDTO) -> str:
-        doc_id = f"{dto.doc_id}:{dto.chunk_id}"
+        doc_id = f"{dto.tenant}:{dto.doc_id}:{dto.chunk_id}"
         self.client.index(
             index=self.index_name,
             id=doc_id,
