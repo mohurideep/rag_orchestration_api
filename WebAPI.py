@@ -3,7 +3,7 @@ import uuid
 from flask import Flask, request, g
 from flask_restx import Api
 
-from werkzeug.exceptions import NotFound
+from werkzeug.exceptions import NotFound, HTTPException
 
 from app.configs import load_config
 from app.Logger.log_main import get_logger
@@ -31,7 +31,7 @@ def create_app() -> Flask:
     index_manager = IndexManager(es_client.client, cfg.index_chunks, cfg.embedding_dim)
     index_manager.ensure_chunks_index()
 
-    api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs")
+    api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs", errors={})
     api.add_namespace(health_ns, path="/health")
     api.add_namespace(seed_ns, path="/seed")
     api.add_namespace(chunks_ns, path="/v1/chunks")
@@ -60,15 +60,15 @@ def create_app() -> Flask:
         
         return resp
     
-    @app.errorhandler(AppError)
-    def handle_app_error(err: AppError):
-        logger.exception(
-            "app_error",
-            extra={"request_id": getattr(g, "request_id", None), "error_code": err.code},
-        )
-        return {"request_id": getattr(g, "request_id", None), "error": {"code": err.code, "message": err.message}}, err.http_status
+    # @api.errorhandler(AppError)
+    # def handle_app_error(err: AppError):
+    #     logger.exception(
+    #         "app_error",
+    #         extra={"request_id": getattr(g, "request_id", None), "error_code": err.code},
+    #     )
+    #     return {"request_id": getattr(g, "request_id", None), "error": {"code": err.code, "message": err.message}}, err.http_status
     
-    @app.errorhandler(NotFound)
+    @api.errorhandler(NotFound)
     def handle_not_found(err: NotFound):
         logger.info(
             "not_found",
@@ -81,24 +81,47 @@ def create_app() -> Flask:
         return {"request_id": getattr(g, "request_id", None),
                 "error": {"code": "NOT_FOUND", "message": "The requested resource was not found."}}, 404
     
-    @app.errorhandler(ValidationError)
-    def handle_validation_error(err):
+    # @api.errorhandler(ValidationError)
+    # def handle_validation_error(err):
+    #     return {
+    #         "request_id": getattr(g, "request_id", None),
+    #         "error": {"code": err.code, "message": err.message},
+    #     }, err.http_status
+
+    # @api.errorhandler(Exception)
+    # def handle_unexpected(err: Exception):
+    #     logger.exception(
+    #         "unexpected_error",
+    #         extra={
+    #             "request_id": getattr(g, "request_id", None),
+    #             "path": getattr(request, "path", None),
+    #             "method": getattr(request, "method", None),
+    #             },
+    #     )
+    #     return {"request_id": getattr(g, "request_id", None),
+    #             "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."}}, 500
+    
+    @api.errorhandler(Exception)
+    def handle_all_errors(err):
+        # If it's your AppError (ValidationError also subclasses AppError)
+        if isinstance(err, AppError):
+            return {
+                "request_id": getattr(g, "request_id", None),
+                "error": {"code": err.code, "message": err.message},
+            }, err.http_status
+
+        # If it's a standard HTTPException (like 404, 405)
+        if isinstance(err, HTTPException):
+            return {
+                "request_id": getattr(g, "request_id", None),
+                "error": {"code": err.name.upper().replace(" ", "_"), "message": err.description},
+            }, err.code
+
+        # fallback
+        logger.exception("unhandled_error", extra={"request_id": getattr(g, "request_id", None)})
         return {
             "request_id": getattr(g, "request_id", None),
-            "error": {"code": err.code, "message": err.message},
-        }, err.http_status
-
-    @app.errorhandler(Exception)
-    def handle_unexpected(err: Exception):
-        logger.exception(
-            "unexpected_error",
-            extra={
-                "request_id": getattr(g, "request_id", None),
-                "path": getattr(request, "path", None),
-                "method": getattr(request, "method", None),
-                },
-        )
-        return {"request_id": getattr(g, "request_id", None),
-                "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."}}, 500
+            "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."},
+        }, 500
     
     return app
