@@ -15,6 +15,8 @@ from app.routes.seed import ns as seed_ns
 from app.routes.chunks import ns as chunks_ns
 from app.routes.documents import ns as documents_ns
 from app.routes.ingest import ns as ingest_ns
+from app.routes.retrieve import ns as retrieve_ns
+from app.utils.errors import ValidationError
 
 # configure logger once per process, duplicate handlers
 logger = get_logger()
@@ -35,6 +37,8 @@ def create_app() -> Flask:
     api.add_namespace(chunks_ns, path="/v1/chunks")
     api.add_namespace(documents_ns, path="/v1/documents")
     api.add_namespace(ingest_ns, path="/v1/ingest")
+    api.add_namespace(retrieve_ns, path="/v1/retrieve")
+
 
     @app.before_request
     def before_request():
@@ -76,6 +80,13 @@ def create_app() -> Flask:
         )
         return {"request_id": getattr(g, "request_id", None),
                 "error": {"code": "NOT_FOUND", "message": "The requested resource was not found."}}, 404
+    
+    @app.errorhandler(ValidationError)
+    def handle_validation_error(err):
+        return {
+            "request_id": getattr(g, "request_id", None),
+            "error": {"code": err.code, "message": err.message},
+        }, err.http_status
 
     @app.errorhandler(Exception)
     def handle_unexpected(err: Exception):
