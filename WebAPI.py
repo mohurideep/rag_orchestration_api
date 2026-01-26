@@ -17,6 +17,7 @@ from app.routes.documents import ns as documents_ns
 from app.routes.ingest import ns as ingest_ns
 from app.routes.retrieve import ns as retrieve_ns
 from app.utils.errors import ValidationError
+from app.routes.retrieve_debug import ns as retrieve_debug_ns
 
 # configure logger once per process, duplicate handlers
 logger = get_logger()
@@ -38,7 +39,7 @@ def create_app() -> Flask:
     api.add_namespace(documents_ns, path="/v1/documents")
     api.add_namespace(ingest_ns, path="/v1/ingest")
     api.add_namespace(retrieve_ns, path="/v1/retrieve")
-
+    api.add_namespace(retrieve_debug_ns, path="/v1/retrieve_debug")
 
     @app.before_request
     def before_request():

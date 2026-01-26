@@ -31,23 +31,21 @@ class ChunkIndex:
             "query": {
                 "bool": {
                     "filter": [{"term": {"tenant": tenant}}],
-                    "must": [{"match": {"text": {"query": query}}}]
+                    "must": [{"match": {"chunk_text": {"query": query}}}]
                 }
             },
             "_source": {
                 "excludes": ["embedding"]
             }
         }
-        res = self.client.search( index=self.index_name, body=body)
-        
-        return [
-            {
-                "es_id": hit['_id'],
-                "score": hit['_score'],
-                "source": hit['_source']
-            }
-            for hit in res['hits']['hits']
-        ]
+        # print(f"BM25 index={self.index_name} tenant={tenant} q={query}")
+        res = self.client.search( index=self.index_name, body=body, request_timeout=30)
+
+        hits = res.get("hits", {}).get("hits", [])
+        # print("BM25 raw_total=", res.get("hits", {}).get("total"))
+
+        return [{"es_id": h["_id"], "score": h["_score"], "source": h["_source"]} for h in hits]
+
 
     def vector_search(self, tenant: str, query_vec: List[float], top_k: int = 8) -> List[Dict[str, Any]]:
         body = {
