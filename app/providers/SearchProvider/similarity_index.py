@@ -38,7 +38,7 @@ class ChunkIndex:
                 "excludes": ["embedding"]
             }
         }
-        res = self.client.search( index=self.index, body=body)
+        res = self.client.search( index=self.index_name, body=body)
         
         return [
             {
@@ -69,7 +69,7 @@ class ChunkIndex:
                 "excludes": ["embedding"]
             }
         }
-        res = self.client.search(index=self.index, body=body)
+        res = self.client.search(index=self.index_name, body=body)
 
         return [
             {
