@@ -15,6 +15,8 @@ class AppConfig:
     local_storage_dir: str
     s3_bucket: str
     aws_region: str
+    groq_api_key: str
+    groq_model: str
 
 def load_config() -> AppConfig:
     return AppConfig(
@@ -27,4 +29,6 @@ def load_config() -> AppConfig:
         local_storage_dir=os.getenv("LOCAL_STORAGE_DIR", "/data"),
         s3_bucket=os.getenv("S3_BUCKET", ""),
         aws_region=os.getenv("AWS_REGION", "ap-southeast-2"),
+        groq_api_key=os.getenv("GROQ_API_KEY", ""),
+        groq_model=os.getenv("GROQ_MODEL", ""),
     )

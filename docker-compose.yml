@@ -27,9 +27,11 @@ services:
       - ./:/app
       - ragdata:/data
       - ${USERPROFILE}/.aws:/root/.aws:ro
+      - hf_cache:/root/.cache/huggingface
     environment:
       - LOCAL_STORAGE_DIR=/data
-    command: gunicorn -w 1 -b 0.0.0.0:8000 --reload wsgi:application
+    # command: gunicorn -w 1 -b 0.0.0.0:8000 --reload wsgi:application
+    command: gunicorn -w 1 -b 0.0.0.0:8000 --timeout 180 --graceful-timeout 180 --reload wsgi:application
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -50,3 +52,4 @@ services:
 volumes:
   esdata:
   ragdata:
+  hf_cache:

@@ -8,6 +8,7 @@ from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.utils.hybrid_merge import merge_results
 from app.utils.prompt import build_grounded_prompt
 from app.providers.LLMProvider.bedrock_llm_provider import BedrockLLMProvider
+from app.providers.LLMProvider.groq_llm_provider import GroqLLMProvider
 from app.utils.errors import ValidationError
 
 ns = Namespace("rag", description="RAG orchestration")
@@ -43,7 +44,11 @@ class RagQuery(Resource):
         prompt = build_grounded_prompt(query, merged)
 
         # LLM (Bedrock)
-        llm = BedrockLLMProvider(g.cfg.aws_region, g.cfg.bedrock_model_id)
+        # llm = BedrockLLMProvider(g.cfg.aws_region, g.cfg.bedrock_model_id)
+        # llm_resp = llm.generate(prompt, max_tokens=500, temperature=0.2)
+
+        #LLM (Groq)
+        llm = GroqLLMProvider(g.cfg.groq_api_key, g.cfg.groq_model)
         llm_resp = llm.generate(prompt, max_tokens=500, temperature=0.2)
 
         return {

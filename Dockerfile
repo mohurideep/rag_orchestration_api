@@ -7,6 +7,9 @@ ENV PYTHONUNBUFFERED=1
 
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
+# Pre-download sentence-transformers model at build time
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
+
 
 COPY . /app
 
