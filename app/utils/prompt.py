@@ -17,8 +17,8 @@ def build_grounded_prompt(user_query: str, contexts: List[Dict[str, Any]]) -> st
 
     return (
         "You are a careful assistant. Answer ONLY using the provided context.\n"
-        "If the answer is not in the context, say you don't know.\n"
-        "Cite sources using [1], [2], etc.\n\n"
+        "If the answer is not in the context, say you don't know and do not cite.\n"
+        "Only cite when you actually used that chunk. Cite sources using [1], [2], etc.\n\n"
         f"User question:\n{user_query}\n\n"
         f"Context:\n{context_text}\n\n"
         "Answer:\n"
