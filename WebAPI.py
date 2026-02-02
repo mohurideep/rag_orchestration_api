@@ -49,6 +49,9 @@ def create_app() -> Flask:
         g.start_time = time.time()
         g.cfg = cfg  # request-scoped config handle
 
+        # Tenant ( required for tenant-scoped endpoints)
+        g.tenant = request.headers.get("X-Tenant-Id", "").strip()
+
     @app.after_request
     def after_request(resp):
         latency_ms = int((time.time() - g.start_time) * 1000)

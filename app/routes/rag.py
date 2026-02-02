@@ -8,7 +8,6 @@ from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.utils.hybrid_merge import merge_results
 from app.utils.prompt import build_grounded_prompt
-from app.providers.LLMProvider.bedrock_llm_provider import BedrockLLMProvider
 from app.providers.LLMProvider.groq_llm_provider import GroqLLMProvider
 from app.utils.errors import ValidationError
 
