@@ -17,6 +17,12 @@ class AppConfig:
     aws_region: str
     groq_api_key: str
     groq_model: str
+    max_request_bytes: int
+    max_files_per_request: int
+    max_total_upload_bytes: int
+    max_single_file_bytes: int
+    tenant_daily_upload_bytes: int
+    tenant_daily_upload_files: int
 
 def load_config() -> AppConfig:
     return AppConfig(
@@ -31,4 +37,10 @@ def load_config() -> AppConfig:
         aws_region=os.getenv("AWS_REGION", "ap-southeast-2"),
         groq_api_key=os.getenv("GROQ_API_KEY", ""),
         groq_model=os.getenv("GROQ_MODEL", ""),
+        max_request_bytes=int(os.getenv("MAX_REQUEST_BYTES", 26214400)),
+        max_files_per_request=int(os.getenv("MAX_FILES_PER_REQUEST", 10)),
+        max_total_upload_bytes=int(os.getenv("MAX_TOTAL_UPLOAD_BYTES", 209715200)),
+        max_single_file_bytes=int(os.getenv("MAX_SINGLE_FILE_BYTES", 10485760)),
+        tenant_daily_upload_bytes=int(os.getenv("TENANT_DAILY_UPLOAD_BYTES", 104857600)),
+        tenant_daily_upload_files=int(os.getenv("TENANT_DAILY_UPLOAD_FILES", 200)),
     )

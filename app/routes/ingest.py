@@ -36,7 +36,7 @@ class IngestDoc(Resource):
 
         text = extract_text(filename, content)
         if not text.strip():
-            raise ValidationError("EMPTY__TEXT", f"Extracted text from document {doc_id} is empty", 400)
+            raise ValidationError("EMPTY_TEXT", f"Extracted text from document {doc_id} is empty", 400)
         
         chunks = chunk_text(text)
         if not chunks:

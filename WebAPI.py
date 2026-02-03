@@ -28,6 +28,9 @@ def create_app() -> Flask:
     app = Flask(__name__)
     cfg = load_config()
 
+    # HARD Request Payload Size Limit
+    app.config["MAX_CONTENT_LENGTH"] = cfg.max_request_bytes
+
     #ensure ES index exist at startup
     es_client = ESClient(cfg.es_url)
     index_manager = IndexManager(es_client.client, cfg.index_chunks, cfg.embedding_dim)
@@ -48,7 +51,7 @@ def create_app() -> Flask:
         g.request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
         g.start_time = time.time()
         g.cfg = cfg  # request-scoped config handle
-
+    
         # Tenant ( required for tenant-scoped endpoints)
         g.tenant = request.headers.get("X-Tenant-Id", "").strip()
 
@@ -66,14 +69,6 @@ def create_app() -> Flask:
         
         return resp
     
-    # @api.errorhandler(AppError)
-    # def handle_app_error(err: AppError):
-    #     logger.exception(
-    #         "app_error",
-    #         extra={"request_id": getattr(g, "request_id", None), "error_code": err.code},
-    #     )
-    #     return {"request_id": getattr(g, "request_id", None), "error": {"code": err.code, "message": err.message}}, err.http_status
-    
     @api.errorhandler(NotFound)
     def handle_not_found(err: NotFound):
         logger.info(
@@ -86,27 +81,7 @@ def create_app() -> Flask:
         )
         return {"request_id": getattr(g, "request_id", None),
                 "error": {"code": "NOT_FOUND", "message": "The requested resource was not found."}}, 404
-    
-    # @api.errorhandler(ValidationError)
-    # def handle_validation_error(err):
-    #     return {
-    #         "request_id": getattr(g, "request_id", None),
-    #         "error": {"code": err.code, "message": err.message},
-    #     }, err.http_status
-
-    # @api.errorhandler(Exception)
-    # def handle_unexpected(err: Exception):
-    #     logger.exception(
-    #         "unexpected_error",
-    #         extra={
-    #             "request_id": getattr(g, "request_id", None),
-    #             "path": getattr(request, "path", None),
-    #             "method": getattr(request, "method", None),
-    #             },
-    #     )
-    #     return {"request_id": getattr(g, "request_id", None),
-    #             "error": {"code": "UNHANDLED", "message": "An unexpected error occurred."}}, 500
-    
+        
     @api.errorhandler(Exception)
     def handle_all_errors(err):
         # If it's your AppError (ValidationError also subclasses AppError)
