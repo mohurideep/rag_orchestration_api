@@ -117,7 +117,7 @@ class UploadDocument(Resource):
             },
             "quota_after": {
                 "date": decision.get("date"),
-                "files": decision.get("files"),
-                "bytes": decision.get("bytes")
+                "files": decision.get("files_used"),
+                "bytes": decision.get("bytes_used")
             }
         }, 201
