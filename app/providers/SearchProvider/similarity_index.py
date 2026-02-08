@@ -25,12 +25,15 @@ class ChunkIndex:
         )
         return response['_source']
     
-    def bm25_search(self, tenant :str, query : str, top_k: int= 8) -> List[Dict[str, Any]]:
+    def bm25_search(self, tenant :str, query : str, top_k: int= 8, doc_id: str | None = None) -> List[Dict[str, Any]]:
+        filters = [{"term": {"tenant": tenant}}]
+        if doc_id:
+            filters.append({"term": {"doc_id": doc_id}})
         body = {
             "size": top_k,
             "query": {
                 "bool": {
-                    "filter": [{"term": {"tenant": tenant}}],
+                    "filter": filters,
                     "must": [{"match": {"chunk_text": {"query": query}}}]
                 }
             },
@@ -47,14 +50,17 @@ class ChunkIndex:
         return [{"es_id": h["_id"], "score": h["_score"], "source": h["_source"]} for h in hits]
 
 
-    def vector_search(self, tenant: str, query_vec: List[float], top_k: int = 8) -> List[Dict[str, Any]]:
+    def vector_search(self, tenant: str, query_vec: List[float], top_k: int = 8, doc_id: str | None = None) -> List[Dict[str, Any]]:
+        filters = [{"term": {"tenant": tenant}}]
+        if doc_id:
+            filters.append({"term": {"doc_id": doc_id}})
         body = {
             "size": top_k,
             "query": {
                 "script_score": {
                     "query": {
                         "bool": {
-                            "filter": [{"term": {"tenant": tenant}}],
+                            "filter": filters,
                         }
                     },
                     "script": {
