@@ -6,7 +6,7 @@ from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.utils.errors import NotFoundError
 
-ns = Namespace('chunks', description='Chunk debug endpoints')
+ns = Namespace('chunks', description='Chunk debug endpoints', path='/v1/chunks')
 
 @ns.route('/<string:es_doc_id>')
 class GetChunk(Resource):

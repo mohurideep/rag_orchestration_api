@@ -11,7 +11,7 @@ from app.utils.prompt import build_grounded_prompt
 from app.providers.LLMProvider.groq_llm_provider import GroqLLMProvider
 from app.utils.errors import ValidationError
 
-ns = Namespace("rag", description="RAG orchestration")
+ns = Namespace("rag", description="RAG orchestration", path="/v1/rag")
 
 @ns.route("/query")
 class RagQuery(Resource):

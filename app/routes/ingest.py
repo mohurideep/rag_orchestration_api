@@ -13,7 +13,7 @@ from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.Models.index_dto import ChunkIndexDTO
 from app.utils.errors import ValidationError, NotFoundError
 
-ns = Namespace("ingest", description="Ingest documents into the system")
+ns = Namespace("ingest", description="Ingest documents into the system", path="/v1/ingest")
 
 @ns.route("/<string:doc_id>")
 class IngestDoc(Resource):

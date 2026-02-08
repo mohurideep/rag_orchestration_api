@@ -10,7 +10,7 @@ from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.providers.EmbeddingsProvider.embedding_provider import LocalEmbeddingProvider
 from app.Models.index_dto import ChunkIndexDTO
 
-ns = Namespace('seed', description='Seed data into Elasticsearch for testing the search pipeline')
+ns = Namespace('seed', description='Seed data into Elasticsearch for testing the search pipeline', path='/v1/seed')
 
 @ns.route('/chunk')
 class SeedChunk(Resource):

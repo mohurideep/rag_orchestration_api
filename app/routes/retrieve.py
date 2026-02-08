@@ -9,7 +9,7 @@ from app.utils.hybrid_merge import merge_results
 
 from app.Logger.log_main import get_logger
 
-ns = Namespace("retrieve", description="Hybrid retrieval (BM25 + vector)")
+ns = Namespace("retrieve", description="Hybrid retrieval (BM25 + vector)", path="/v1/retrieve")
 logger = get_logger()
 
 @ns.route("/")

@@ -6,7 +6,7 @@ from elasticsearch import Elasticsearch
 from app.providers.SearchProvider.es_client import ESClient
 from app.utils.errors import UpstreamError
 
-ns = Namespace("health", description="Health Check")
+ns = Namespace("health", description="Health Check", path="/v1/health")
 
 @ns.route("/")
 @ns.route("")

@@ -6,7 +6,7 @@ from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.similarity_index import ChunkIndex
 from app.utils.errors import ValidationError
 
-ns = Namespace("retrieve_debug", description="Debug retrieval components")
+ns = Namespace("retrieve_debug", description="Debug retrieval components", path="/v1/retrieve_debug")
 
 @ns.route("/bm25")
 class DebugBM25(Resource):

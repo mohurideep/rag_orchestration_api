@@ -8,7 +8,7 @@ from app.utils.errors import ValidationError
 from app.utils.quota_store import QuotaStore
 from app.utils.size_fmt import bytes_to_mb
 
-ns = Namespace("documents", description="Document upload & metadata")
+ns = Namespace("documents", description="Document upload & metadata", path="/v1/documents")
 
 @ns.route("/")
 class UploadDocument(Resource):

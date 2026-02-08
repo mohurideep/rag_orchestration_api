@@ -29,14 +29,6 @@ def create_app() -> Flask:
     index_manager.ensure_chunks_index()
 
     api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs", errors={})
-    # api.add_namespace(health_ns, path="/health")
-    # api.add_namespace(seed_ns, path="/seed")
-    # api.add_namespace(chunks_ns, path="/v1/chunks")
-    # api.add_namespace(documents_ns, path="/v1/documents")
-    # api.add_namespace(ingest_ns, path="/v1/ingest")
-    # api.add_namespace(retrieve_ns, path="/v1/retrieve")
-    # api.add_namespace(retrieve_debug_ns, path="/v1/retrieve_debug")
-    # api.add_namespace(rag_ns, path="/v1/rag")
 
     load_routes(api, "app.routes")
 
