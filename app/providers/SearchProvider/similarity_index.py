@@ -77,3 +77,19 @@ class ChunkIndex:
             }
             for hit in res['hits']['hits']
         ]
+
+
+    def count_chunks(self, tenant: str, scope: str, doc_id: str) -> int:
+        body = {
+            "query": {
+                "bool": {
+                    "filter": [
+                        {"term": {"tenant": tenant}},
+                        {"term": {"scope": scope}},
+                        {"term": {"doc_id": doc_id}}
+                    ]
+                }
+            }
+        }
+        res = self.client.count(index=self.index_name, body=body)
+        return res.get("count", 0)
