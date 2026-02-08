@@ -76,7 +76,7 @@ class IngestDoc(Resource):
         return {"status": "success", "doc_id": doc_id, "chunks_indexed": len(es_ids)}, 201
     
 
-@ns.route("")
+@ns.route("/")
 class IngestTenant(Resource):
     def post(self):
         """Ingest all unindexed documents for a tenant."""

@@ -7,18 +7,10 @@ from werkzeug.exceptions import NotFound, HTTPException
 
 from app.configs import load_config
 from app.Logger.log_main import get_logger
-from app.routes.health import ns as health_ns
 from app.utils.errors import AppError
 from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.index_manager import IndexManager
-from app.routes.seed import ns as seed_ns
-from app.routes.chunks import ns as chunks_ns
-from app.routes.documents import ns as documents_ns
-from app.routes.ingest import ns as ingest_ns
-from app.routes.retrieve import ns as retrieve_ns
-from app.utils.errors import ValidationError
-from app.routes.retrieve_debug import ns as retrieve_debug_ns
-from app.routes.rag import ns as rag_ns
+from app.utils.route_loader import load_routes
 
 # configure logger once per process, duplicate handlers
 logger = get_logger()
@@ -37,14 +29,16 @@ def create_app() -> Flask:
     index_manager.ensure_chunks_index()
 
     api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs", errors={})
-    api.add_namespace(health_ns, path="/health")
-    api.add_namespace(seed_ns, path="/seed")
-    api.add_namespace(chunks_ns, path="/v1/chunks")
-    api.add_namespace(documents_ns, path="/v1/documents")
-    api.add_namespace(ingest_ns, path="/v1/ingest")
-    api.add_namespace(retrieve_ns, path="/v1/retrieve")
-    api.add_namespace(retrieve_debug_ns, path="/v1/retrieve_debug")
-    api.add_namespace(rag_ns, path="/v1/rag")
+    # api.add_namespace(health_ns, path="/health")
+    # api.add_namespace(seed_ns, path="/seed")
+    # api.add_namespace(chunks_ns, path="/v1/chunks")
+    # api.add_namespace(documents_ns, path="/v1/documents")
+    # api.add_namespace(ingest_ns, path="/v1/ingest")
+    # api.add_namespace(retrieve_ns, path="/v1/retrieve")
+    # api.add_namespace(retrieve_debug_ns, path="/v1/retrieve_debug")
+    # api.add_namespace(rag_ns, path="/v1/rag")
+
+    load_routes(api, "app.routes")
 
     @app.before_request
     def before_request():

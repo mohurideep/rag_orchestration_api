@@ -12,7 +12,7 @@ from app.Logger.log_main import get_logger
 ns = Namespace("retrieve", description="Hybrid retrieval (BM25 + vector)")
 logger = get_logger()
 
-@ns.route("")
+@ns.route("/")
 class Retrieve(Resource):
     def post(self):
         

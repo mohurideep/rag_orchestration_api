@@ -10,7 +10,7 @@ from app.utils.size_fmt import bytes_to_mb
 
 ns = Namespace("documents", description="Document upload & metadata")
 
-@ns.route("")
+@ns.route("/")
 class UploadDocument(Resource):
     def post(self):
         # 1) Tenant from header
