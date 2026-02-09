@@ -282,6 +282,76 @@ class RagSummary(Resource):
                 }
             }, 200
 
+        # ======================
+        # MODE B: Query-guided summary (retrieval within a single doc)
+        # ======================
+        top_k = int(payload.get("top_k") or 5)
+
+        t1 = time.time()
+        embedder = LocalEmbeddingProvider(g.cfg.embed_model_name)
+        qvec = embedder.embed_text(user_query)
+        t_embed = int((time.time() - t1) * 1000)
+
+        t2 = time.time()
+        es = ESClient(g.cfg.es_url)
+        index = ChunkIndex(es.client, g.cfg.index_chunks)
+
+        bm25 = index.bm25_search(tenant=tenant, query=user_query, top_k=top_k, doc_id=doc_id)
+        vec = index.vector_search(tenant=tenant, query_vec=qvec, top_k=top_k, doc_id=doc_id)
+        merged = merge_results(bm25, vec, w_bm25=0.5, w_vec=0.5, top_k=top_k)
+        t_retrieve = int((time.time() - t2) * 1000)
+
+        if not merged:
+            return {
+                "status": "success",
+                "query": user_query,
+                "doc_id": doc_id,
+                "tenant": tenant,
+                "answer": "I don't Know",
+                "citations_used": [],
+                "retrieved_context": [],
+                "timings_ms": {
+                    "embed": t_embed,
+                    "retrieve": t_retrieve,
+                    "llm": 0,
+                    "total": int((time.time() - t0) * 1000),
+                },
+            }, 200
+        
+        prompt = build_query_guided_summary_prompt(user_query, merged)
+        llm_resp = llm.generate(prompt, max_tokens=700, temperature=0.2)
+        summary = llm_resp["text"]
+
+        all_citations = [
+            {
+                "ref": i + 1,
+                "es_id": item["es_id"],
+                "source": item["source"].get("source"),
+                "doc_id": item["source"].get("doc_id"),
+                "chunk_id": item["source"].get("chunk_id"),
+            }
+            for i, item in enumerate(merged)
+        ]
+        used_refs = extract_used_refs(summary)
+        used_citations = [ref for ref in used_refs if ref <= len(all_citations)]
+
+        return {
+            "status": "success",
+            "doc_id": doc_id,
+            "tenant": tenant,
+            "mode": "query-guided",
+            "query": user_query,
+            "summary": summary,
+            "citations_used": used_citations,
+            "retrieved_context": all_citations,
+            "timings_ms": {
+                "embed": t_embed,
+                "retrieve": t_retrieve,
+                "llm": llm_resp["latency_ms"],
+                "total": int((time.time() - t0) * 1000),
+            },
+        }, 200
+
 def extract_used_refs(answer: str) -> set[int]:
     #finds [1][2] in the answer text
     refs = set()
