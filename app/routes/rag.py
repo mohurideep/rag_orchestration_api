@@ -52,10 +52,6 @@ class RagQuery(Resource):
         # Prompt
         prompt = build_grounded_prompt(query, merged)
 
-        # LLM (Bedrock)
-        # llm = BedrockLLMProvider(g.cfg.aws_region, g.cfg.bedrock_model_id)
-        # llm_resp = llm.generate(prompt, max_tokens=500, temperature=0.2)
-
         #LLM (Groq)
         llm = GroqLLMProvider(g.cfg.groq_api_key, g.cfg.groq_model)
         llm_resp = llm.generate(prompt, max_tokens=500, temperature=0.2)
