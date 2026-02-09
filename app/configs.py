@@ -23,6 +23,8 @@ class AppConfig:
     max_single_file_bytes: int
     tenant_daily_upload_bytes: int
     tenant_daily_upload_files: int
+    summary_max_chars: int
+    summary_batch_size: int
 
 def load_config() -> AppConfig:
     return AppConfig(
@@ -43,4 +45,6 @@ def load_config() -> AppConfig:
         max_single_file_bytes=int(os.getenv("MAX_SINGLE_FILE_BYTES", 10485760)),
         tenant_daily_upload_bytes=int(os.getenv("TENANT_DAILY_UPLOAD_BYTES", 104857600)),
         tenant_daily_upload_files=int(os.getenv("TENANT_DAILY_UPLOAD_FILES", 200)),
+        summary_max_chars=int(os.getenv("SUMMARY_MAX_CHARS", 12000)),
+        summary_batch_size=int(os.getenv("SUMMARY_BATCH_SIZE", 5)),
     )

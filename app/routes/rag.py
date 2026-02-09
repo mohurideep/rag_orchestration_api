@@ -6,10 +6,15 @@ from flask_restx import Namespace, Resource
 from app.providers.EmbeddingsProvider.embedding_provider import LocalEmbeddingProvider
 from app.providers.SearchProvider.es_client import ESClient
 from app.providers.SearchProvider.similarity_index import ChunkIndex
-from app.utils.hybrid_merge import merge_results
-from app.utils.prompt import build_grounded_prompt
 from app.providers.LLMProvider.groq_llm_provider import GroqLLMProvider
-from app.utils.errors import ValidationError
+from app.providers.StorageProvider.s3_provider import S3StorageProvider
+from app.providers.Chunking.chunker import chunk_text
+
+from app.utils.hybrid_merge import merge_results
+from app.utils.prompt import build_grounded_prompt , build_doc_summary_prompt, build_query_guided_summary_prompt
+from app.utils.registry import Registry
+from app.utils.text_extract import extract_text
+from app.utils.errors import ValidationError, NotFoundError
 
 ns = Namespace("rag", description="RAG orchestration", path="/v1/rag")
 
@@ -175,6 +180,107 @@ class RagQueryDoc(Resource):
                 "total": int((time.time() - t0) * 1000),
             },
         }, 200
+
+@ns.route("/summary")
+class RagSummary(Resource):
+    def post(self):
+        payload = request.get_json(silent=True) or {}
+
+        doc_id = (payload.get("doc_id") or "").strip()
+        user_query = (payload.get("query") or "").strip()  # optional query for query-guided summary
+
+        tenant = (getattr(g, "tenant", "") or "").strip()  # prefer tenant from header, fallback to payload
+        if not tenant:
+            raise ValidationError("MISSING_TENANT", "Request must include 'X-Tenant-Id' header", 400)
+        
+        if not doc_id:
+            raise ValidationError("MISSING_DOC_ID", "Request must include non-empty 'doc_id'", 400)
+        
+        t0 = time.time()
+
+        # 1) Load doc metadata ( tenant isolation)
+        reg = Registry(f"{g.cfg.local_storage_dir}/registry.json")
+        record = reg.get(doc_id)
+        if not record or record.get("tenant") != tenant:
+            raise NotFoundError("DOCUMENT_NOT_FOUND", f"Document with id '{doc_id}' not found for this tenant", 404)
+        
+        # 2) Read file from S3 + extract text
+        s3 = S3StorageProvider(g.cfg.s3_bucket, g.cfg.aws_region)
+        content = s3.read(record["s3_key"])
+        filename = record["filename"]
+
+        text = extract_text(filename, content)
+        if not text.strip():
+            raise ValidationError("EMPTY_TEXT", f"No extractable text found in document '{doc_id}'", 404)
+        
+        llm = GroqLLMProvider(g.cfg.groq_api_key, g.cfg.groq_model)
+
+        # ======================
+        # MODE A: Default summary (entire doc)
+        # ======================
+        if not user_query:
+            max_chars = int(getattr(g.cfg, "summary_max_chars", 12000))
+            batch_size = int(getattr(g.cfg, "summary_batch_size", 5))
+
+            # if doc text small -> single prompt
+            if len(text) <= max_chars:
+                prompt = build_doc_summary_prompt(text)
+                llm_resp = llm.generate(prompt, max_tokens=800, temperature=0.2)
+                return {
+                    "status": "success",
+                    "tenant": tenant,
+                    "doc_id": doc_id,
+                    "mode": "default full document",
+                    "summary" : llm_resp["text"],
+                    "timing_ms": {
+                        "llm": llm_resp["latency_ms"],
+                        "total": int((time.time() - t0) * 1000),
+                    }
+                }, 200
+            # if doc text large -> summarize all chunks , then summarize combined summaries
+            chunks = chunk_text(text)
+            if not chunks:
+                raise ValidationError("EMPTY_CHUNKS", f"Failed to chunk document '{doc_id}' for summarization", 400)
+            
+            partials = []
+            llm_total = 0
+            #summarize chunks in batches
+            for i in range(0, len(chunks), batch_size):
+                batch = "\n\n".join(chunks[i:i+batch_size])
+                prompt = build_doc_summary_prompt(batch)
+                resp = llm.generate(prompt, max_tokens=600, temperature=0.2)
+                llm_total += resp["latency_ms"]
+                partials.append(resp["text"])
+
+            # 3) Combine partial summaries
+            if not partials:
+                raise ValidationError("EMPTY_PARTIALS", f"Failed to generate partial summaries for document '{doc_id}'", 400)
+
+            combined = "\n\n".join(partials)
+            final_prompt = (
+                    "You are a careful assistant.\n"
+                    "Task: Combine partial summaries into ONE final summary for the full document.\n"
+                    "Rules:\n"
+                    "- Do not invent facts.\n"
+                    "- Output:\n"
+                    "  1) Executive summary (4-6 lines)\n"
+                    "  2) Key bullets (8-12 bullets)\n\n"
+                    f"Partial summaries:\n{combined}\n\n"
+                    "Final summary:\n"
+                )
+            final_resp = llm.generate(final_prompt, max_tokens=800, temperature=0.2)
+            llm_total += final_resp["latency_ms"]
+            return {
+                "status": "success",
+                "tenant": tenant,
+                "doc_id": doc_id,
+                "mode": "default_full_document",
+                "summary": final_resp["text"],
+                "timing_ms": {
+                    "llm": final_resp["latency_ms"],
+                    "total": int((time.time() - t0) * 1000),
+                }
+            }, 200
 
 def extract_used_refs(answer: str) -> set[int]:
     #finds [1][2] in the answer text
