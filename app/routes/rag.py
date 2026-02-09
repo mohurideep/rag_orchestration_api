@@ -19,7 +19,9 @@ class RagQuery(Resource):
         payload = request.get_json(silent=True) or {}
         query = (payload.get("query") or "").strip()
         top_k = int(payload.get("top_k") or 5)
-        tenant = payload.get("tenant") or "demo"
+        tenant = (getattr(g, "tenant", "") or "").strip()  # prefer tenant from header, fallback to payload
+        if not tenant:
+            raise ValidationError("MISSING_TENANT", "Request must include 'X-Tenant-Id' header", 400)
 
         if not query:
             raise ValidationError("MISSING_QUERY", "Request must include non-empty 'query'", 400)
@@ -83,6 +85,96 @@ class RagQuery(Resource):
                 "total": int((time.time() - t0) * 1000),
             },
         }
+
+@ns.route("/query_doc")
+class RagQueryDoc(Resource):
+    def post(self):
+        payload = request.get_json(silent=True) or {}
+        query = (payload.get("query") or "").strip()
+        doc_id = (payload.get("doc_id") or "").strip()
+        top_k = int(payload.get("top_k") or 5)
+
+        tenant = (getattr(g, "tenant", "") or "").strip()  # prefer tenant from header, fallback to payload
+        if not tenant:
+            raise ValidationError("MISSING_TENANT", "Request must include 'X-Tenant-Id' header", 400)
+        
+        if not query:
+            raise ValidationError("MISSING_QUERY", "Request must include non-empty 'query'", 400)
+
+        if not doc_id:
+            raise ValidationError("MISSING_DOC_ID", "Request must include non-empty 'doc_id'", 400)
+        
+        t0 = time.time()
+
+        # Embed Query
+        t1 = time.time()
+        embedder = LocalEmbeddingProvider(g.cfg.embed_model_name)
+        qvec = embedder.embed_text(query)
+        t_embed = int((time.time() - t1) * 1000)
+
+        # Retreive ( filter by Doc_id)
+        t2 = time.time()
+        es = ESClient(g.cfg.es_url)
+        index = ChunkIndex(es.client, g.cfg.index_chunks)
+
+        bm25 = index.bm25_search(tenant=tenant, query=query, top_k=top_k, doc_id=doc_id)
+        vec = index.vector_search(tenant=tenant, query_vec=qvec, top_k=top_k, doc_id=doc_id)
+        merged = merge_results(bm25, vec, w_bm25=0.5, w_vec=0.5, top_k=top_k)
+        t_retrieve = int((time.time() - t2) * 1000)
+
+        if not merged:
+            return {
+                "status": "success",
+                "query": query,
+                "doc_id": doc_id,
+                "tenant": tenant,
+                "answer": "I don't Know",
+                "citations_used": [],
+                "retrieved_context": [],
+                "timings_ms": {
+                    "embed": t_embed,
+                    "retrieve": t_retrieve,
+                    "llm": 0,
+                    "total": int((time.time() - t0) * 1000),
+                },
+            }, 200
+
+        # Prompt + LLM
+        prompt = build_grounded_prompt(user_query=query, contexts=merged)
+        llm = GroqLLMProvider(g.cfg.groq_api_key, g.cfg.groq_model)
+        llm_resp = llm.generate(prompt, max_tokens=500, temperature=0.2)
+        answer = llm_resp["text"]
+
+        all_citations = [
+            {
+                "ref": i + 1,
+                "es_id": item["es_id"],
+                "source": item["source"].get("source"),
+                "doc_id": item["source"].get("doc_id"),
+                "chunk_id": item["source"].get("chunk_id"),
+            }
+            for i, item in enumerate(merged)
+        ]
+
+        used_refs = extract_used_refs(answer)
+        used_citations = [cite for cite in all_citations if cite["ref"] in used_refs]
+
+
+        return {
+            "status": "success",
+            "query": query,
+            "doc_id": doc_id,
+            "tenant": tenant,
+            "answer": answer,
+            "citations_used": used_citations,
+            "retrieved_context": all_citations,
+            "timings_ms": {
+                "embed": t_embed,
+                "retrieve": t_retrieve,
+                "llm": llm_resp["latency_ms"],
+                "total": int((time.time() - t0) * 1000),
+            },
+        }, 200
 
 def extract_used_refs(answer: str) -> set[int]:
     #finds [1][2] in the answer text
