@@ -25,8 +25,9 @@ def create_app() -> Flask:
 
     #ensure ES index exist at startup
     es_client = ESClient(cfg.es_url)
-    index_manager = IndexManager(es_client.client, cfg.index_chunks, cfg.embedding_dim)
+    index_manager = IndexManager(es_client.client, cfg.index_chunks, cfg.embedding_dim, cfg.index_docs)
     index_manager.ensure_chunks_index()
+    index_manager.ensure_doc_index(cfg.index_docs)
 
     api = Api(app, version="1.0", title="RAG Orchestration API", doc="/docs", errors={})
 

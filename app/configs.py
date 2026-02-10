@@ -11,6 +11,7 @@ class AppConfig:
     bedrock_model_id: str
     embed_model_name: str
     index_chunks: str
+    index_docs: str
     embedding_dim: int
     local_storage_dir: str
     s3_bucket: str
@@ -33,6 +34,7 @@ def load_config() -> AppConfig:
         bedrock_model_id=os.getenv("BEDROCK_MODEL_ID", ""),
         embed_model_name=os.getenv("EMBED_MODEL_NAME", "sentence-transformers/all-MiniLM-L6-v2"),
         index_chunks=os.getenv("ES_INDEX_CHUNKS", "rag_chunks"),
+        index_docs=os.getenv("ES_INDEX_DOCS", "rag_documents"),
         embedding_dim=int(os.getenv("ES_EMBEDDING_DIM", 384)),
         local_storage_dir=os.getenv("LOCAL_STORAGE_DIR", "/data"),
         s3_bucket=os.getenv("S3_BUCKET", ""),
