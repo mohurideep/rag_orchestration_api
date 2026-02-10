@@ -26,6 +26,7 @@ class AppConfig:
     tenant_daily_upload_files: int
     summary_max_chars: int
     summary_batch_size: int
+    metadata_registry_path : str
 
 def load_config() -> AppConfig:
     return AppConfig(
@@ -49,4 +50,5 @@ def load_config() -> AppConfig:
         tenant_daily_upload_files=int(os.getenv("TENANT_DAILY_UPLOAD_FILES", 200)),
         summary_max_chars=int(os.getenv("SUMMARY_MAX_CHARS", 12000)),
         summary_batch_size=int(os.getenv("SUMMARY_BATCH_SIZE", 5)),
+        metadata_registry_path=os.getenv("METADATA_REGISTRY_PATH", f"{os.getenv('LOCAL_STORAGE_DIR', '/data')}/metadata_registry.json"),
     )

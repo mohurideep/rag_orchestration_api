@@ -49,7 +49,7 @@ class IndexManager:
             "settings": {
                 "index": {"number_of_shards": 1, "number_of_replicas": 0}
                 },
-                "mapping": {
+                "mappings": {
                     "properties": {
                         "tenant": {"type": "keyword"},
                         "doc_id": {"type": "keyword"},
